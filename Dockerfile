@@ -1,7 +1,7 @@
 # Dockerfile for Convlytics-LLM
 
 # Build stage
-FROM openjdk:21-jdk-slim AS build
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -24,7 +24,7 @@ COPY src src
 RUN ./mvnw package -DskipTests
 
 # Runtime stage (smaller image)
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
