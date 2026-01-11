@@ -56,7 +56,7 @@ Convlytics-LLM is an advanced conversational AI application that helps users mas
 ### **AI & Models**
 | Service | Purpose |
 |---------|---------|
-| **OpenAI API** | LLM conversations (Nemotron 3 Nano) |
+| **OpenRouter API** | LLM conversations (Nemotron 3 Nano) |
 | **Deepgram** | Speech-to-Text (Nova-3 model) |
 | **Deepgram** | Text-to-Speech (Aura models) |
 
@@ -246,29 +246,6 @@ Convlytics-LLM/
 
 ---
 
-## 🎨 UI Components
-
-### Pages
-
-1. **Home (`index.html`)**
-   - Landing page with feature overview
-   - How-it-works section
-   - Call-to-action buttons
-
-2. **AI Interview (`Conversations.html`)**
-   - Interactive AI sphere visualization
-   - Recording controls
-   - Real-time status indicators
-
-3. **Analysis (`Analysis.html`)**
-   - Pronunciation score gauge
-   - Word distribution donut chart
-   - Categorized word lists
-   - Full transcription view
-   - AI-generated feedback
-
----
-
 ## 🧠 How It Works
 
 ### Conversation Flow
@@ -292,6 +269,68 @@ graph LR
    - **Medium (0.6 - 0.8)**: Almost there, minor improvements needed
    - **High (> 0.8)**: Excellent pronunciation
 3. **Overall Score**: Calculated as percentage of well-pronounced words
+
+---
+
+## 🚢 Deployment on Render
+
+Deploy Convlytics-LLM to Render using Docker for a production-ready setup.
+
+### Quick Deploy
+
+1. **Fork/Push to GitHub**
+   - Ensure your code is pushed to GitHub
+   - Repository: `https://github.com/gaurabhkr/Convlytics-LLM`
+
+2. **Create Web Service on Render**
+   - Go to [Render Dashboard](https://dashboard.render.com/)
+   - Click **New +** → **Web Service**
+   - Connect your GitHub repository
+
+3. **Configure Service**
+   - **Runtime**: Docker
+   - **Branch**: main
+   - **Dockerfile Path**: `./Dockerfile`
+
+4. **Set Environment Variables**
+   ```
+   SPRING_AI_OPENAI_API_KEY=your-openrouter-key
+   SPRING_AI_OPENAI_BASE_URL=https://openrouter.ai/api/v1
+   DEEPGRAM_API_KEY=your-deepgram-key
+   DEEPGRAM_BASE_URL=https://api.deepgram.com/v1/speak
+   ```
+
+5. **Deploy**
+   - Click **Create Web Service**
+   - Wait for build and deployment
+   - Access at: `https://your-app.onrender.com`
+
+### Local Docker Testing
+
+Test the Docker container locally before deploying:
+
+```bash
+# Build the image
+docker build -t convlytics-llm .
+
+# Run with environment variables
+docker run -p 8080:8080 \
+  -e SPRING_AI_OPENAI_API_KEY=your-key \
+  -e SPRING_AI_OPENAI_BASE_URL=your-url \
+  -e DEEPGRAM_API_KEY=your-key \
+  -e DEEPGRAM_BASE_URL=your-url \
+  convlytics-llm
+
+# Test
+curl http://localhost:8080
+```
+
+### Render Service Tiers
+
+| Tier | Cost | Features |
+|------|------|----------|
+| **Free** | $0/month | 750 hours, spins down after 15 min |
+| **Starter** | $7/month | Always on, better performance |
 
 ---
 
