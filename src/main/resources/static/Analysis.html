@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convlytics-LLM - Pronunciation Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .font-display {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0c0c14 0%, #1a1a2e 50%, #0f0f1a 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      /* prevent horizontal scroll */
+    }
+
+    /* Also prevent accidental horizontal overflow from any child */
+    html {
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.5);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.7);
+    }
+
+    /* Skeleton Loading Animation */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-wave 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes skeleton-wave {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    .skeleton-circle {
+      border-radius: 50%;
+    }
+
+    /* MUI-style Wave Skeleton */
+    .skeleton-wave-line {
+      height: 16px;
+      width: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg,
+          rgba(255, 255, 255, 0.04) 0%,
+          rgba(255, 255, 255, 0.04) 40%,
+          rgba(255, 255, 255, 0.12) 50%,
+          rgba(255, 255, 255, 0.04) 60%,
+          rgba(255, 255, 255, 0.04) 100%);
+      background-size: 200% 100%;
+      animation: mui-wave 1.6s ease-in-out infinite;
+    }
+
+    @keyframes mui-wave {
+      0% {
+        background-position: 100% 0;
+      }
+
+      100% {
+        background-position: -100% 0;
+      }
+    }
+
+    /* Custom Donut Chart */
+    .donut-segment {
+      fill: none;
+      stroke-width: 30;
+      stroke-linecap: round;
+      transform-origin: center;
+      transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    }
+
+    .donut-segment:hover {
+      opacity: 0.8;
+      filter: brightness(1.1);
+    }
+
+    .donut-center-text {
+      font-weight: 700;
+      fill: white;
+    }
+
+    .donut-label {
+      fill: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .legend-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateX(4px);
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .legend-value {
+      font-weight: 600;
+      color: white;
+    }
+
+    .legend-name {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+    }
+
+    .legend-percent {
+      margin-left: auto;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Glass Card Effect */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 24px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      background: rgba(12, 12, 20, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      margin: 4px 0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    /* Custom Gauge */
+    .gauge-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 14;
+    }
+
+    .gauge-progress {
+      fill: none;
+      stroke-width: 14;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    /* Progress Ring Colors */
+    .progress-excellent {
+      stroke: url(#gradientExcellent);
+    }
+
+    .progress-good {
+      stroke: url(#gradientGood);
+    }
+
+    .progress-fair {
+      stroke: url(#gradientFair);
+    }
+
+    /* Word Tags */
+    .word-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .word-tag:hover {
+      transform: scale(1.05);
+    }
+
+    .low-word {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .mid-word {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fde68a;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    /* Stat Cards */
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      padding: 24px;
+      background: linear-gradient(135deg, var(--from) 0%, var(--to) 100%);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    }
+
+    /* Transcription Box */
+    .transcription-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.8;
+    }
+
+    /* AI Feedback */
+    .feedback-content {
+      line-height: 1.8;
+    }
+
+    .feedback-content h3,
+    .feedback-content h4 {
+      margin-top: 20px;
+      margin-bottom: 12px;
+    }
+
+    .feedback-content ul {
+      margin-left: 8px;
+      margin-bottom: 16px;
+    }
+
+    .feedback-content li {
+      margin-bottom: 8px;
+    }
+
+    /* AI Feedback Single Section */
+    .feedback-container {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .feedback-container:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .feedback-text {
+      font-size: 15px;
+      line-height: 1.9;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .feedback-text p {
+      margin-bottom: 16px;
+    }
+
+    .feedback-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Highlighted elements within feedback */
+    .feedback-highlight {
+      color: #a78bfa;
+      font-weight: 600;
+    }
+
+    .feedback-word {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      color: #fca5a5;
+      font-weight: 500;
+      font-size: 14px;
+      margin: 2px 4px;
+    }
+
+    .feedback-word.good {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    .feedback-word.medium {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: rgba(251, 191, 36, 0.3);
+      color: #fde68a;
+    }
+
+    .feedback-correction {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 8px;
+      margin: 4px 2px;
+      font-size: 14px;
+    }
+
+    .feedback-original {
+      text-decoration: line-through;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .feedback-arrow {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .feedback-corrected {
+      color: #34d399;
+      font-weight: 500;
+    }
+
+    .feedback-pronunciation {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(59, 130, 246, 0.15);
+      border-radius: 4px;
+      color: #93c5fd;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      margin: 0 2px;
+    }
+
+    .feedback-tip-inline {
+      display: block;
+      margin: 16px 0;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 14px;
+    }
+
+    .feedback-tip-inline i {
+      color: #a78bfa;
+      margin-right: 10px;
+    }
+
+    .feedback-section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0 16px 0;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .feedback-section-divider::before,
+    .feedback-section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+
+    .feedback-section-divider i {
+      font-size: 14px;
+    }
+
+    .feedback-emoji {
+      font-size: 18px;
+      margin-right: 6px;
+    }
+
+    /* Typewriter/Fade-in animation for feedback */
+    @keyframes feedbackFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .feedback-animate {
+      animation: feedbackFadeIn 0.6s ease forwards;
+    }
+
+    .feedback-container p {
+      animation: feedbackFadeIn 0.5s ease forwards;
+      animation-delay: 0.1s;
+      opacity: 0;
+    }
+
+    .feedback-container p:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .feedback-container p:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .feedback-container p:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    .feedback-container p:nth-child(5) {
+      animation-delay: 0.5s;
+    }
+
+    .feedback-container p:nth-child(6) {
+      animation-delay: 0.6s;
+    }
+
+    /* Pulse Animation */
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.95);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(0.95);
+        opacity: 1;
+      }
+    }
+
+    .pulse-animation {
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+
+    /* Mini Progress Bar */
+    .mini-progress {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .mini-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    /* Floating Shapes */
+    .floating-shape {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* Error State */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .error-state i {
+      font-size: 48px;
+      color: rgba(239, 68, 68, 0.5);
+      margin-bottom: 16px;
+    }
+
+    .error-state p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+    }
+
+    /* Responsive Chart Sizes */
+    .gauge-skeleton-size {
+      width: 120px;
+      height: 120px;
+    }
+
+    .gauge-responsive {
+      width: 120px;
+      height: 120px;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .donut-skeleton-size {
+      width: 120px;
+      height: 120px;
+    }
+
+    .donut-responsive {
+      width: 120px;
+      height: 120px;
+    }
+
+    .donut-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend-skeleton-size {
+      width: 100%;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    /* Large screens */
+    @media (min-width: 1024px) {
+      .gauge-skeleton-size {
+        width: 160px;
+        height: 160px;
+      }
+
+      .gauge-responsive {
+        width: 160px;
+        height: 160px;
+      }
+
+      .donut-skeleton-size {
+        width: 160px;
+        height: 160px;
+      }
+
+      .donut-responsive {
+        width: 160px;
+        height: 160px;
+      }
+
+      .legend-skeleton-size {
+        height: 40px;
+        border-radius: 10px;
+      }
+    }
+
+    /* Extra large screens */
+    @media (min-width: 1280px) {
+      .gauge-skeleton-size {
+        width: 200px;
+        height: 200px;
+      }
+
+      .gauge-responsive {
+        width: 200px;
+        height: 200px;
+      }
+
+      .donut-skeleton-size {
+        width: 200px;
+        height: 200px;
+      }
+
+      .donut-responsive {
+        width: 200px;
+        height: 200px;
+      }
+
+      .legend-skeleton-size {
+        height: 48px;
+        border-radius: 12px;
+      }
+
+      .word-tag {
+        padding: 10px 20px;
+        font-size: 15px;
+        margin: 6px;
+      }
+    }
+
+    /* 2XL screens */
+    @media (min-width: 1536px) {
+      .gauge-skeleton-size {
+        width: 240px;
+        height: 240px;
+      }
+
+      .gauge-responsive {
+        width: 240px;
+        height: 240px;
+      }
+
+      .donut-skeleton-size {
+        width: 240px;
+        height: 240px;
+      }
+
+      .donut-responsive {
+        width: 240px;
+        height: 240px;
+      }
+
+      .word-tag {
+        padding: 12px 24px;
+        font-size: 16px;
+        margin: 8px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0 !important;
+      }
+    }
+
+    /* Glassmorphism Navbar */
+    .glass-navbar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 0 80px rgba(139, 92, 246, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    @media (min-width: 640px) {
+      .glass-navbar {
+        gap: 12px;
+        padding: 10px 16px;
+        border-radius: 24px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .glass-navbar {
+        gap: 16px;
+        padding: 12px 20px;
+      }
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 12px;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    @media (min-width: 640px) {
+      .nav-logo {
+        padding-right: 16px;
+      }
+    }
+
+    .nav-logo:hover {
+      opacity: 0.8;
+    }
+
+    .nav-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    @media (min-width: 640px) {
+      .nav-logo-icon {
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    .nav-logo:hover .nav-logo-icon {
+      transform: rotate(-5deg) scale(1.05);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    }
+
+    .nav-logo-text {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .nav-logo-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+    }
+
+    .nav-logo-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: white;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo-subtitle {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    @media (min-width: 640px) {
+      .nav-links {
+        gap: 6px;
+      }
+    }
+
+    .nav-link {
+      position: relative;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 500;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 640px) {
+      .nav-link {
+        font-size: 13px;
+        padding: 10px 16px;
+        border-radius: 14px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .nav-link {
+        font-size: 14px;
+        padding: 10px 20px;
+      }
+    }
+
+    .nav-link:hover {
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link.active {
+      color: white;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      box-shadow:
+        0 4px 15px rgba(139, 92, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-link.active::before {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+
+    /* GitHub Link */
+    .github-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-left: 8px;
+      padding-left: 12px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 18px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    @media (min-width: 640px) {
+      .github-link {
+        width: 40px;
+        height: 40px;
+        margin-left: 12px;
+        padding-left: 16px;
+        font-size: 20px;
+      }
+    }
+
+    .github-link:hover {
+      color: white;
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .github-link:hover i {
+      filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Floating Shapes -->
+  <div class="floating-shape" style="width: 400px; height: 400px; background: #8b5cf6; top: -100px; right: -100px;">
+  </div>
+  <div class="floating-shape" style="width: 300px; height: 300px; background: #3b82f6; bottom: -50px; left: -50px;">
+  </div>
+
+  <!-- Glassmorphism Navigation -->
+  <nav class="glass-navbar">
+    <!-- Logo -->
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">
+        <i class="fas fa-brain text-white text-sm sm:text-base"></i>
+      </div>
+      <div class="nav-logo-text">
+        <span class="nav-logo-title">Convlytics</span>
+        <span class="nav-logo-subtitle">LLM POWERED</span>
+      </div>
+    </a>
+
+    <!-- Navigation Links -->
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="Conversations.html" class="nav-link">AI Interview</a>
+      <a href="Analysis.html" class="nav-link active">Analysis</a>
+    </div>
+
+    <!-- GitHub Icon -->
+    <a href="https://github.com/gaurabhkr/Convlytics-LLM" target="_blank" rel="noopener noreferrer" class="github-link">
+      <i class="fab fa-github"></i>
+    </a>
+  </nav>
+
+  <div class="flex min-h-screen pt-24">
+    <!-- Main Content -->
+    <main class="main-content flex-1">
+
+      <div class="p-8">
+        <!-- Page Title Section -->
+        <div class="text-center mb-10">
+          <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-3"
+            style="font-family: 'Plus Jakarta Sans', sans-serif; letter-spacing: -0.02em;">
+            <span
+              class="bg-gradient-to-r from-white via-violet-200 to-blue-200 bg-clip-text text-transparent">Pronunciation
+              Analysis</span>
+          </h1>
+          <p class="text-white/50 text-lg md:text-xl font-light" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Session results and AI feedback
+          </p>
+          <div class="mt-4 flex items-center justify-center gap-3">
+            <div class="h-px w-16 bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
+            <i class="fas fa-waveform-lines text-violet-400/60"></i>
+            <div class="h-px w-16 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+          </div>
+        </div>
+
+        <!-- Top Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <!-- Overall Score Card -->
+          <div class="stat-card"
+            style="--from: rgba(139, 92, 246, 0.3); --to: rgba(59, 130, 246, 0.3); border: 1px solid rgba(139, 92, 246, 0.2);">
+            <div class="flex items-center justify-between relative z-10">
+              <div>
+                <p class="text-white/60 text-sm font-medium mb-1">Overall Score</p>
+                <p id="scoreValue" class="text-4xl font-bold text-white">--</p>
+                <div class="mt-3 flex items-center gap-2">
+                  <span id="scoreStatus" class="text-violet-300 text-sm">Loading...</span>
+                </div>
+              </div>
+              <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-chart-line text-violet-400 text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Words Card -->
+          <div class="stat-card"
+            style="--from: rgba(239, 68, 68, 0.2); --to: rgba(220, 38, 38, 0.2); border: 1px solid rgba(239, 68, 68, 0.2);">
+            <div class="flex items-center justify-between relative z-10">
+              <div>
+                <p class="text-white/60 text-sm font-medium mb-1">Needs Work</p>
+                <p id="lowWordsCount" class="text-4xl font-bold text-white">--</p>
+                <div class="mt-3">
+                  <span class="text-rose-300 text-sm">Words to practice</span>
+                </div>
+              </div>
+              <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-exclamation-circle text-rose-400 text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mid Words Card -->
+          <div class="stat-card"
+            style="--from: rgba(251, 191, 36, 0.2); --to: rgba(245, 158, 11, 0.2); border: 1px solid rgba(251, 191, 36, 0.2);">
+            <div class="flex items-center justify-between relative z-10">
+              <div>
+                <p class="text-white/60 text-sm font-medium mb-1">Almost There</p>
+                <p id="midWordsCount" class="text-4xl font-bold text-white">--</p>
+                <div class="mt-3">
+                  <span class="text-amber-300 text-sm">Minor fixes needed</span>
+                </div>
+              </div>
+              <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-adjust text-amber-400 text-xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row - Pronunciation Score and Word Distribution -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 xl:gap-10 mb-8 max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto">
+          <!-- Custom Gauge Chart -->
+          <div class="glass-card p-5 md:p-6 lg:p-8 xl:p-10 flex flex-col h-full">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-white font-semibold text-sm md:text-base lg:text-lg xl:text-xl">Pronunciation Score</h2>
+                <p class="text-white/40 text-xs md:text-sm lg:text-base mt-0.5 lg:mt-1">Your performance</p>
+              </div>
+              <div class="flex items-center gap-2 px-2 py-1 lg:px-3 lg:py-1.5 bg-white/5 rounded-lg">
+                <span class="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-emerald-400 rounded-full"></span>
+                <span class="text-white/60 text-[10px] lg:text-xs">Live</span>
+              </div>
+            </div>
+
+            <div class="flex-1 flex items-center justify-center gap-4 lg:gap-8 xl:gap-10">
+              <!-- Custom Gauge -->
+              <div class="flex justify-center">
+                <div id="gaugeSkeleton" class="flex flex-col items-center">
+                  <div class="skeleton skeleton-circle gauge-skeleton-size"></div>
+                </div>
+                <div id="gaugeContainer" class="gauge-container hidden gauge-responsive">
+                  <svg class="gauge-svg" viewBox="0 0 200 200">
+                    <defs>
+                      <linearGradient id="gradientExcellent" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#10b981" />
+                        <stop offset="100%" stop-color="#34d399" />
+                      </linearGradient>
+                      <linearGradient id="gradientGood" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#f59e0b" />
+                        <stop offset="100%" stop-color="#fbbf24" />
+                      </linearGradient>
+                      <linearGradient id="gradientFair" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#ef4444" />
+                        <stop offset="100%" stop-color="#f87171" />
+                      </linearGradient>
+                    </defs>
+                    <circle class="gauge-bg" cx="100" cy="100" r="85" />
+                    <circle id="gaugeProgress" class="gauge-progress" cx="100" cy="100" r="85" stroke-dasharray="534"
+                      stroke-dashoffset="534" />
+                  </svg>
+                  <div class="gauge-center">
+                    <div id="gaugeValue" class="text-2xl lg:text-3xl xl:text-4xl font-bold text-white">0</div>
+                    <div id="gaugeLabel" class="text-white/50 text-[10px] lg:text-xs xl:text-sm mt-0.5 lg:mt-1">
+                      Loading...</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Score Breakdown - Compact Vertical -->
+              <div class="flex flex-col gap-2 lg:gap-3 xl:gap-4">
+                <div
+                  class="flex items-center gap-2 lg:gap-3 p-2 px-3 lg:p-3 lg:px-4 xl:p-4 xl:px-5 bg-white/5 rounded-lg lg:rounded-xl">
+                  <div class="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-emerald-400"></div>
+                  <div class="text-emerald-400 text-sm lg:text-base xl:text-lg font-semibold" id="excellentCount">--
+                  </div>
+                  <div class="text-white/40 text-[10px] lg:text-xs xl:text-sm">Excellent</div>
+                </div>
+                <div
+                  class="flex items-center gap-2 lg:gap-3 p-2 px-3 lg:p-3 lg:px-4 xl:p-4 xl:px-5 bg-white/5 rounded-lg lg:rounded-xl">
+                  <div class="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-amber-400"></div>
+                  <div class="text-amber-400 text-sm lg:text-base xl:text-lg font-semibold" id="goodCount">--</div>
+                  <div class="text-white/40 text-[10px] lg:text-xs xl:text-sm">Good</div>
+                </div>
+                <div
+                  class="flex items-center gap-2 lg:gap-3 p-2 px-3 lg:p-3 lg:px-4 xl:p-4 xl:px-5 bg-white/5 rounded-lg lg:rounded-xl">
+                  <div class="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-rose-400"></div>
+                  <div class="text-rose-400 text-sm lg:text-base xl:text-lg font-semibold" id="needsWorkCount">--</div>
+                  <div class="text-white/40 text-[10px] lg:text-xs xl:text-sm">Needs Work</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Donut Chart -->
+          <div class="glass-card p-5 md:p-6 lg:p-8 xl:p-10 flex flex-col h-full">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-white font-semibold text-sm md:text-base lg:text-lg xl:text-xl">Word Distribution</h2>
+                <p class="text-white/40 text-xs md:text-sm lg:text-base mt-0.5 lg:mt-1">By accuracy level</p>
+              </div>
+            </div>
+
+            <!-- Skeleton Loading -->
+            <div id="donutChartSkeleton" class="flex-1 flex flex-col items-center justify-center">
+              <div class="skeleton skeleton-circle donut-skeleton-size"></div>
+              <div class="space-y-2 lg:space-y-3 mt-4 lg:mt-6 w-full">
+                <div class="skeleton legend-skeleton-size"></div>
+                <div class="skeleton legend-skeleton-size"></div>
+                <div class="skeleton legend-skeleton-size"></div>
+              </div>
+            </div>
+
+            <!-- Custom SVG Donut Chart -->
+            <div id="donutChartContainer" class="hidden flex-1 flex flex-col justify-center">
+              <div class="flex justify-center mb-4 lg:mb-6">
+                <div class="relative donut-responsive">
+                  <svg id="donutSvg" class="donut-svg" viewBox="0 0 200 200">
+                    <defs>
+                      <linearGradient id="gradientRed" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ef4444" />
+                        <stop offset="100%" stop-color="#f87171" />
+                      </linearGradient>
+                      <linearGradient id="gradientAmber" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f59e0b" />
+                        <stop offset="100%" stop-color="#fbbf24" />
+                      </linearGradient>
+                      <linearGradient id="gradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981" />
+                        <stop offset="100%" stop-color="#34d399" />
+                      </linearGradient>
+                    </defs>
+                    <!-- Background circle -->
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="30" />
+                    <!-- Donut segments will be added dynamically -->
+                    <circle id="donutSegment1" class="donut-segment" cx="100" cy="100" r="70" stroke="url(#gradientRed)"
+                      stroke-dasharray="0 440" stroke-width="30" transform="rotate(-90 100 100)" />
+                    <circle id="donutSegment2" class="donut-segment" cx="100" cy="100" r="70"
+                      stroke="url(#gradientAmber)" stroke-dasharray="0 440" stroke-width="30"
+                      transform="rotate(-90 100 100)" />
+                    <circle id="donutSegment3" class="donut-segment" cx="100" cy="100" r="70"
+                      stroke="url(#gradientGreen)" stroke-dasharray="0 440" stroke-width="30"
+                      transform="rotate(-90 100 100)" />
+                  </svg>
+                  <!-- Center content -->
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="donutTotal" class="text-xl lg:text-2xl xl:text-3xl font-bold text-white">0</span>
+                    <span class="text-white/50 text-[10px] lg:text-xs xl:text-sm">Total</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="space-y-2 lg:space-y-3 xl:space-y-4" id="donutLegend">
+                <div class="legend-item py-2 px-3 lg:py-3 lg:px-4 xl:py-4 xl:px-5" data-segment="1">
+                  <div class="legend-dot w-2.5 h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                    style="background: linear-gradient(135deg, #ef4444, #f87171);"></div>
+                  <div class="flex-1">
+                    <div class="legend-value text-sm lg:text-base xl:text-lg" id="legendLowValue">0</div>
+                    <div class="legend-name text-[11px] lg:text-xs xl:text-sm">Needs Work</div>
+                  </div>
+                  <span class="legend-percent text-xs lg:text-sm xl:text-base" id="legendLowPercent">0%</span>
+                </div>
+                <div class="legend-item py-2 px-3 lg:py-3 lg:px-4 xl:py-4 xl:px-5" data-segment="2">
+                  <div class="legend-dot w-2.5 h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                    style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"></div>
+                  <div class="flex-1">
+                    <div class="legend-value text-sm lg:text-base xl:text-lg" id="legendMidValue">0</div>
+                    <div class="legend-name text-[11px] lg:text-xs xl:text-sm">Almost There</div>
+                  </div>
+                  <span class="legend-percent text-xs lg:text-sm xl:text-base" id="legendMidPercent">0%</span>
+                </div>
+                <div class="legend-item py-2 px-3 lg:py-3 lg:px-4 xl:py-4 xl:px-5" data-segment="3">
+                  <div class="legend-dot w-2.5 h-2.5 lg:w-3 lg:h-3 xl:w-4 xl:h-4"
+                    style="background: linear-gradient(135deg, #10b981, #34d399);"></div>
+                  <div class="flex-1">
+                    <div class="legend-value text-sm lg:text-base xl:text-lg" id="legendGoodValue">0</div>
+                    <div class="legend-name text-[11px] lg:text-xs xl:text-sm">Excellent</div>
+                  </div>
+                  <span class="legend-percent text-xs lg:text-sm xl:text-base" id="legendGoodPercent">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Words Lists Row -->
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 xl:gap-10 mb-8 max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto">
+          <!-- Low Words -->
+          <div class="glass-card p-5 md:p-6 lg:p-8 xl:p-10">
+            <div class="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
+              <div
+                class="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 bg-rose-500/20 rounded-lg lg:rounded-xl flex items-center justify-center">
+                <i class="fas fa-times-circle text-rose-400 text-sm lg:text-base xl:text-lg"></i>
+              </div>
+              <div>
+                <h2 class="text-white font-semibold text-sm md:text-base lg:text-lg xl:text-xl">Needs Improvement</h2>
+                <p class="text-white/40 text-xs md:text-sm lg:text-base">Focus on these words</p>
+              </div>
+            </div>
+            <div id="lowWordsContainer" class="min-h-[80px] lg:min-h-[100px] xl:min-h-[120px]">
+              <div class="space-y-2 lg:space-y-3">
+                <div class="skeleton skeleton-line" style="width: 90%; height: 12px;"></div>
+                <div class="skeleton skeleton-line" style="width: 75%; height: 12px;"></div>
+                <div class="skeleton skeleton-line" style="width: 60%; height: 12px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mid Words -->
+          <div class="glass-card p-5 md:p-6 lg:p-8 xl:p-10">
+            <div class="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
+              <div
+                class="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 bg-amber-500/20 rounded-lg lg:rounded-xl flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-amber-400 text-sm lg:text-base xl:text-lg"></i>
+              </div>
+              <div>
+                <h2 class="text-white font-semibold text-sm md:text-base lg:text-lg xl:text-xl">Almost Perfect</h2>
+                <p class="text-white/40 text-xs md:text-sm lg:text-base">Small adjustments needed</p>
+              </div>
+            </div>
+            <div id="midWordsContainer" class="min-h-[80px] lg:min-h-[100px] xl:min-h-[120px]">
+              <div class="space-y-2 lg:space-y-3">
+                <div class="skeleton skeleton-line" style="width: 85%; height: 12px;"></div>
+                <div class="skeleton skeleton-line" style="width: 70%; height: 12px;"></div>
+                <div class="skeleton skeleton-line" style="width: 55%; height: 12px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transcription Section -->
+        <div class="glass-card p-6 mb-8">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <i class="fas fa-comment-dots text-blue-400"></i>
+            </div>
+            <div class="flex-1">
+              <h2 class="text-white font-semibold">Conversation Transcription</h2>
+              <p class="text-white/40 text-sm">Your recorded speech</p>
+            </div>
+            <button id="copyBtn"
+              class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/60 text-sm transition flex items-center gap-2">
+              <i class="fas fa-copy"></i>
+              Copy
+            </button>
+          </div>
+          <div id="transcriptionContainer" class="transcription-box text-white/70">
+            <div id="transcriptionSkeleton" class="space-y-4">
+              <div class="skeleton-wave-line"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.1s;"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.2s; width: 90%;"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.3s; width: 95%;"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.4s; width: 75%;"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.5s; width: 85%;"></div>
+              <div class="skeleton-wave-line" style="animation-delay: 0.6s; width: 80%;"></div>
+            </div>
+            <div id="transcriptionContent" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- AI Feedback Section -->
+        <div class="glass-card p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center">
+              <i class="fas fa-robot text-white"></i>
+            </div>
+            <div class="flex-1">
+              <h2 class="text-white font-semibold">AI Feedback & Suggestions</h2>
+              <p class="text-white/40 text-sm">Personalized tips to improve</p>
+            </div>
+            <div id="aiStatus" class="flex items-center gap-2 px-3 py-1.5 bg-violet-500/20 rounded-lg">
+              <span class="w-2 h-2 bg-violet-400 rounded-full pulse-animation"></span>
+              <span class="text-violet-300 text-xs font-medium">Analyzing...</span>
+            </div>
+          </div>
+          <div id="llmFeedbackContainer">
+            <div id="llmSkeleton" class="space-y-4">
+              <div class="skeleton" style="width: 40%; height: 24px;"></div>
+              <div class="skeleton skeleton-line" style="width: 100%;"></div>
+              <div class="skeleton skeleton-line" style="width: 95%;"></div>
+              <div class="skeleton skeleton-line" style="width: 85%;"></div>
+              <div class="skeleton" style="width: 30%; height: 20px; margin-top: 20px;"></div>
+              <div class="skeleton skeleton-line" style="width: 90%;"></div>
+              <div class="skeleton skeleton-line" style="width: 80%;"></div>
+              <div class="skeleton skeleton-line" style="width: 88%;"></div>
+              <div class="skeleton" style="width: 35%; height: 20px; margin-top: 20px;"></div>
+              <div class="skeleton skeleton-line" style="width: 85%;"></div>
+              <div class="skeleton skeleton-line" style="width: 75%;"></div>
+            </div>
+            <div id="llmContent" class="hidden feedback-content text-white/70"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="text-center py-8 text-white/30 text-sm border-t border-white/5">
+        <p>© 2024 <span
+            class="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent font-medium">Convlytics-LLM</span>.
+          AI-Powered Pronunciation Training.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // =====================
+    // API ENDPOINTS
+    // =====================
+    const API_ENDPOINTS = {
+      wordScore: '/api/word-score',
+      lowWords: '/api/low-words',
+      midWords: '/api/mid-words',
+      totalWords: '/api/total-words',
+      transcription: '/api/conversation-transcription',
+      llmFeedback: '/api/llm-final-transcription'
+    };
+
+    // Custom Donut Chart Functions
+    function initDonutChart(lowCount, midCount, totalWords) {
+      document.getElementById('donutChartSkeleton').classList.add('hidden');
+      document.getElementById('donutChartContainer').classList.remove('hidden');
+
+      // Calculate good count from total
+      const goodCount = Math.max(0, totalWords - lowCount - midCount);
+      const total = totalWords;
+      const circumference = 2 * Math.PI * 70; // ~440
+
+      // Handle edge case of zero total
+      if (total === 0) {
+        document.getElementById('donutTotal').textContent = '0';
+        return;
+      }
+
+      // Calculate percentages
+      const lowPercent = (lowCount / total) * 100;
+      const midPercent = (midCount / total) * 100;
+      const goodPercent = (goodCount / total) * 100;
+
+      // Calculate dash arrays
+      const lowDash = (lowCount / total) * circumference;
+      const midDash = (midCount / total) * circumference;
+      const goodDash = (goodCount / total) * circumference;
+
+      // Calculate offsets (where each segment starts)
+      const lowOffset = 0;
+      const midOffset = lowDash;
+      const goodOffset = lowDash + midDash;
+
+      // Get segments
+      const segment1 = document.getElementById('donutSegment1');
+      const segment2 = document.getElementById('donutSegment2');
+      const segment3 = document.getElementById('donutSegment3');
+
+      // Animate segments with delay
+      setTimeout(() => {
+        segment1.style.strokeDasharray = `${lowDash} ${circumference}`;
+        segment1.style.strokeDashoffset = '0';
+      }, 100);
+
+      setTimeout(() => {
+        segment2.style.strokeDasharray = `${midDash} ${circumference}`;
+        segment2.style.strokeDashoffset = `-${midOffset}`;
+      }, 300);
+
+      setTimeout(() => {
+        segment3.style.strokeDasharray = `${goodDash} ${circumference}`;
+        segment3.style.strokeDashoffset = `-${goodOffset}`;
+      }, 500);
+
+      // Update legend with animation
+      animateValue(document.getElementById('donutTotal'), 0, total, 1000);
+      animateValue(document.getElementById('legendLowValue'), 0, lowCount, 800);
+      animateValue(document.getElementById('legendMidValue'), 0, midCount, 900);
+      animateValue(document.getElementById('legendGoodValue'), 0, goodCount, 1000);
+
+      // Update percentages
+      setTimeout(() => {
+        document.getElementById('legendLowPercent').textContent = `${lowPercent.toFixed(1)}%`;
+        document.getElementById('legendMidPercent').textContent = `${midPercent.toFixed(1)}%`;
+        document.getElementById('legendGoodPercent').textContent = `${goodPercent.toFixed(1)}%`;
+      }, 500);
+
+      // Update breakdown counts with animation
+      setTimeout(() => {
+        animateValue(document.getElementById('excellentCount'), 0, goodCount, 800);
+        animateValue(document.getElementById('goodCount'), 0, midCount, 800);
+        animateValue(document.getElementById('needsWorkCount'), 0, lowCount, 800);
+      }, 200);
+    }
+
+    // Custom Gauge Functions
+    function initGauge(score) {
+      document.getElementById('gaugeSkeleton').classList.add('hidden');
+      document.getElementById('gaugeContainer').classList.remove('hidden');
+      updateGauge(score);
+    }
+
+    function updateGauge(score) {
+      const circumference = 2 * Math.PI * 85; // ~534
+      const progress = document.getElementById('gaugeProgress');
+      const valueEl = document.getElementById('gaugeValue');
+      const labelEl = document.getElementById('gaugeLabel');
+
+      // Calculate offset
+      const offset = circumference - (score / 100) * circumference;
+
+      // Set color based on score
+      progress.classList.remove('progress-excellent', 'progress-good', 'progress-fair');
+      if (score >= 70) {
+        progress.classList.add('progress-excellent');
+        labelEl.textContent = 'Excellent!';
+        labelEl.className = 'text-emerald-400 text-sm mt-1 font-medium';
+      } else if (score >= 30) {
+        progress.classList.add('progress-good');
+        labelEl.textContent = 'Good Progress';
+        labelEl.className = 'text-amber-400 text-sm mt-1 font-medium';
+      } else {
+        progress.classList.add('progress-fair');
+        labelEl.textContent = 'Keep Practicing';
+        labelEl.className = 'text-rose-400 text-sm mt-1 font-medium';
+      }
+
+      // Animate
+      setTimeout(() => {
+        progress.style.strokeDashoffset = offset;
+      }, 100);
+
+      // Animate number
+      animateValue(valueEl, 0, score, 1500);
+
+      // Update stat card
+      document.getElementById('scoreValue').textContent = score;
+      const status = score >= 70 ? '↑ Excellent!' : score >= 30 ? '→ Good' : '↓ Needs work';
+      document.getElementById('scoreStatus').innerHTML = `<i class="fas fa-arrow-trend-up mr-1"></i>${status}`;
+    }
+
+    function animateValue(el, start, end, duration) {
+      const range = end - start;
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + range * easeOut);
+        el.textContent = current;
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+
+    // Display Low Words
+    function displayLowWords(words) {
+      const container = document.getElementById('lowWordsContainer');
+      document.getElementById('lowWordsCount').textContent = words ? words.length : 0;
+
+      if (!words || words.length === 0) {
+        container.innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+            <p class="text-emerald-300">No words need major improvement! 🎉</p>
+          </div>`;
+        return;
+      }
+      container.innerHTML = words.map(word =>
+        `<span class="word-tag low-word">${word}</span>`
+      ).join('');
+    }
+
+    // Display Mid Words
+    function displayMidWords(words) {
+      const container = document.getElementById('midWordsContainer');
+      document.getElementById('midWordsCount').textContent = words ? words.length : 0;
+
+      if (!words || words.length === 0) {
+        container.innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <i class="fas fa-star text-emerald-400 text-xl"></i>
+            <p class="text-emerald-300">All words are well pronounced! ⭐</p>
+          </div>`;
+        return;
+      }
+      container.innerHTML = words.map(word =>
+        `<span class="word-tag mid-word">${word}</span>`
+      ).join('');
+    }
+
+    // Display Transcription
+    function displayTranscription(text) {
+      const skeleton = document.getElementById('transcriptionSkeleton');
+      const content = document.getElementById('transcriptionContent');
+
+      skeleton.classList.add('hidden');
+      content.classList.remove('hidden');
+
+      if (!text) {
+        content.innerHTML = '<p class="text-white/40 italic">No transcription available.</p>';
+        return;
+      }
+      content.innerHTML = `<p class="whitespace-pre-line leading-relaxed">${text}</p>`;
+
+      // Setup copy button
+      document.getElementById('copyBtn').addEventListener('click', () => {
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById('copyBtn');
+          btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          btn.classList.add('text-emerald-400');
+          setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+            btn.classList.remove('text-emerald-400');
+          }, 2000);
+        });
+      });
+    }
+
+    // Display LLM Feedback (renders HTML directly from API)
+    function displayLLMFeedback(htmlContent) {
+      const skeleton = document.getElementById('llmSkeleton');
+      const content = document.getElementById('llmContent');
+      const status = document.getElementById('aiStatus');
+
+      skeleton.classList.add('hidden');
+      content.classList.remove('hidden');
+      status.innerHTML = `
+        <span class="w-2 h-2 bg-emerald-400 rounded-full"></span>
+        <span class="text-emerald-300 text-xs font-medium">Complete</span>
+      `;
+      status.classList.remove('bg-violet-500/20');
+      status.classList.add('bg-emerald-500/20');
+
+      if (!htmlContent) {
+        content.innerHTML = '<p class="text-white/40 italic">No AI feedback available.</p>';
+        return;
+      }
+
+      // Render the HTML content directly from the API
+      content.innerHTML = `
+        <div class="feedback-container feedback-animate">
+          <div class="feedback-text">
+            ${htmlContent}
+          </div>
+        </div>
+      `;
+    }
+
+    // Show error state for a container
+    function showError(containerId, message = 'Failed to load data') {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = `
+          <div class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>${message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Fetch from Real APIs
+    async function fetchData() {
+      // Fetch all data in parallel
+      const [scoreRes, lowWordsRes, midWordsRes, totalWordsRes, transcriptionRes, llmFeedbackRes] = await Promise.allSettled([
+        fetch(API_ENDPOINTS.wordScore).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch score');
+          return r.json();
+        }),
+        fetch(API_ENDPOINTS.lowWords).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch low words');
+          return r.json();
+        }),
+        fetch(API_ENDPOINTS.midWords).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch mid words');
+          return r.json();
+        }),
+        fetch(API_ENDPOINTS.totalWords).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch total words');
+          return r.json();
+        }),
+        fetch(API_ENDPOINTS.transcription).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch transcription');
+          return r.text();
+        }),
+        fetch(API_ENDPOINTS.llmFeedback).then(r => {
+          if (!r.ok) throw new Error('Failed to fetch LLM feedback');
+          return r.text();
+        })
+      ]);
+
+      // Process score
+      if (scoreRes.status === 'fulfilled') {
+        const score = typeof scoreRes.value === 'number' ? scoreRes.value : parseInt(scoreRes.value) || 0;
+        initGauge(score);
+      } else {
+        console.error('Score fetch error:', scoreRes.reason);
+        document.getElementById('gaugeSkeleton').classList.add('hidden');
+        document.getElementById('gaugeContainer').classList.remove('hidden');
+        document.getElementById('gaugeValue').textContent = '--';
+        document.getElementById('gaugeLabel').textContent = 'Error';
+        document.getElementById('scoreValue').textContent = '--';
+        document.getElementById('scoreStatus').textContent = 'Failed to load';
+      }
+
+      // Process words
+      const lowWords = lowWordsRes.status === 'fulfilled' ? lowWordsRes.value : [];
+      const midWords = midWordsRes.status === 'fulfilled' ? midWordsRes.value : [];
+      const totalWords = totalWordsRes.status === 'fulfilled' ?
+        (typeof totalWordsRes.value === 'number' ? totalWordsRes.value : parseInt(totalWordsRes.value) || 0) : 0;
+
+      // Display word lists
+      if (lowWordsRes.status === 'fulfilled') {
+        displayLowWords(lowWords);
+      } else {
+        console.error('Low words fetch error:', lowWordsRes.reason);
+        document.getElementById('lowWordsContainer').innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+            <p class="text-emerald-300">No Words</p>
+          </div>`;
+        document.getElementById('lowWordsCount').textContent = '--';
+      }
+
+      if (midWordsRes.status === 'fulfilled') {
+        displayMidWords(midWords);
+      } else {
+        console.error('Mid words fetch error:', midWordsRes.reason);
+        document.getElementById('midWordsContainer').innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+            <p class="text-emerald-300">No Words</p>
+          </div>`;
+        document.getElementById('midWordsCount').textContent = '--';
+      }
+
+      // Initialize donut chart
+      const lowCount = Array.isArray(lowWords) ? lowWords.length : 0;
+      const midCount = Array.isArray(midWords) ? midWords.length : 0;
+      const total = totalWords > 0 ? totalWords : (lowCount + midCount);
+
+      if (totalWordsRes.status === 'fulfilled' || (lowWordsRes.status === 'fulfilled' && midWordsRes.status === 'fulfilled')) {
+        initDonutChart(lowCount, midCount, total);
+      } else {
+        document.getElementById('donutChartSkeleton').classList.add('hidden');
+        document.getElementById('donutChartContainer').classList.remove('hidden');
+        document.getElementById('donutTotal').textContent = '--';
+      }
+
+      // Process transcription
+      if (transcriptionRes.status === 'fulfilled') {
+        displayTranscription(transcriptionRes.value);
+      } else {
+        console.error('Transcription fetch error:', transcriptionRes.reason);
+        document.getElementById('transcriptionSkeleton').classList.add('hidden');
+        document.getElementById('transcriptionContent').classList.remove('hidden');
+        document.getElementById('transcriptionContent').innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+            <i class="fas fa-comment-slash text-white/40"></i>
+            <p class="text-white/50">No transcription</p>
+          </div>`;
+      }
+
+      // Process LLM feedback (HTML content)
+      if (llmFeedbackRes.status === 'fulfilled') {
+        displayLLMFeedback(llmFeedbackRes.value);
+      } else {
+        console.error('LLM feedback fetch error:', llmFeedbackRes.reason);
+        document.getElementById('llmSkeleton').classList.add('hidden');
+        document.getElementById('llmContent').classList.remove('hidden');
+        document.getElementById('llmContent').innerHTML = `
+          <div class="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+            <i class="fas fa-robot text-white/40"></i>
+            <p class="text-white/50">No AI feedback</p>
+          </div>`;
+        document.getElementById('aiStatus').innerHTML = `
+          <span class="w-2 h-2 bg-rose-400 rounded-full"></span>
+          <span class="text-rose-300 text-xs font-medium">Error</span>
+        `;
+        document.getElementById('aiStatus').classList.remove('bg-violet-500/20');
+        document.getElementById('aiStatus').classList.add('bg-rose-500/20');
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchData().catch(error => {
+        console.error('Error fetching data:', error);
+      });
+    });
+  </script>
+</body>
+
+</html>
