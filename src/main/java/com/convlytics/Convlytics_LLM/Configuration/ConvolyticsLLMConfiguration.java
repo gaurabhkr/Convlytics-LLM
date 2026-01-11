@@ -5,13 +5,9 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.ibm.cloud.sdk.core.security.IamAuthenticator;
-import com.ibm.watson.speech_to_text.v1.SpeechToText;
-import com.ibm.watson.text_to_speech.v1.TextToSpeech;
 
 @Configuration
 public class ConvolyticsLLMConfiguration {
