@@ -9,6 +9,8 @@ Convlytics-LLM is an advanced conversational AI application that helps users mas
 ![Spring AI](https://img.shields.io/badge/Spring%20AI-1.1.2-blue?style=flat)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)
 
+**🚀 [Live Demo](https://convlytics-llm.onrender.com/)** • Experience the app in action!
+
 ---
 
 ## ✨ Features
